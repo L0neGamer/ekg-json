@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | Encoding of metrics as JSON. The encoding defined by the
+-- | Encoding of ekg metrics as JSON. The encoding defined by the
 -- functions in this module are standardized and used by the ekg web
 -- UI. The purpose of this module is to let other web servers and
 -- frameworks than the one used by the ekg package expose ekg metrics.
@@ -77,6 +77,13 @@ typeMismatch expected actual =
         A.Bool _   -> "Boolean"
         A.Null     -> "Null"
 
+-- | Encodes a single metric as a JSON object. Example:
+--
+-- > {
+-- >   "type": "c",
+-- >   "val": 89460
+-- > }
+--
 valueToJson :: Metrics.Value -> A.Value
 valueToJson (Metrics.Counter n)      = scalarToJson n CounterType
 valueToJson (Metrics.Gauge n)        = scalarToJson n GaugeType
