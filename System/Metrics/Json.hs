@@ -1,27 +1,34 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Encoding of ekg metrics as JSON. The encoding defined by the
 -- functions in this module are standardized and used by the ekg web
 -- UI. The purpose of this module is to let other web servers and
 -- frameworks than the one used by the ekg package expose ekg metrics.
+--
+-- This module provides two ways of doing the encoding, using named
+-- functions or using type class instances.
 module System.Metrics.Json
     ( -- * Converting metrics to JSON values
       sampleToJson
     , valueToJson
 
       -- ** Newtype wrappers with instances
+      -- $newtype-wrappers
     , Sample(..)
     , Value(..)
     ) where
 
-import Data.Aeson ((.=))
-import qualified Data.Aeson.Encode as A
+import Control.Applicative ((<$>), (<*>))
+import Control.Monad (mzero)
+import Data.Aeson ((.=), (.:))
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as M
 import Data.Int (Int64)
 import qualified Data.Text as T
 import qualified System.Metrics as Metrics
 import qualified System.Metrics.Distribution as Distribution
+import qualified System.Metrics.Distribution.Internal as Distribution
 
 ------------------------------------------------------------------------
 -- * Converting metrics to JSON values
@@ -125,20 +132,61 @@ distrubtionToJson stats = A.object
 ------------------------------------------------------------------------
 -- ** Newtype wrappers with instances
 
+-- $newtype-wrappers
+--
+-- These newtype wrappers allow us to provide aeson instances for
+-- 'Metrics.Sample' and 'Metrics.Value' without creating orphan
+-- instances. Useful e.g. if you want to embed these values in another
+-- value that you want to provide an instance for.
+
 -- | Newtype wrapper that provides a 'A.ToJSON' instances for the
 -- underlying 'Metrics.Sample' without creating an orphan instance.
 newtype Sample = Sample Metrics.Sample
-    deriving Show
+    deriving (Eq, Show)
 
 -- | Uses 'sampleToJson'.
 instance A.ToJSON Sample where
     toJSON (Sample s) = sampleToJson s
 
+instance A.FromJSON Sample where
+    parseJSON (A.Object v) = do
+        -- The outermost object should contain zero or more sub
+        -- objects.
+        undefined
+      where
+        parseInner :: [T.Text] -> A.Parser (M.HashMap T.Text Metrics.Value)
+        parseInner nameFrags = do
+            -- Here we expect either: more nested objects or a type
+            -- field indicating that we have reached a metric value.
+            undefined
+
+    -- A non-Object value is of the wrong type, so fail.
+    parseJSON _          = mzero
+
 -- | Newtype wrapper that provides a 'A.ToJSON' instances for the
 -- underlying 'Metrics.Value' without creating an orphan instance.
 newtype Value = Value Metrics.Value
-    deriving Show
+    deriving (Eq, Show)
 
 -- | Uses 'valueToJson'.
 instance A.ToJSON Value where
     toJSON (Value v) = valueToJson v
+
+instance A.FromJSON Value where
+    parseJSON (A.Object v) = do
+        (type_ :: T.Text) <- v .: "type"
+        case type_ of
+            "c" -> Value . Metrics.Counter <$> v .: "val"
+            "g" -> Value . Metrics.Gauge   <$> v .: "val"
+            "l" -> Value . Metrics.Label   <$> v .: "val"
+            "d" -> (Value . Metrics.Distribution) <$> (Distribution.Stats <$>
+                   v .: "mean" <*>
+                   v .: "variance" <*>
+                   v .: "count" <*>
+                   v .: "sum" <*>
+                   v .: "min" <*>
+                   v .: "max")
+
+            _   -> mzero
+    -- A non-Object value is of the wrong type, so fail.
+    parseJSON _          = mzero
