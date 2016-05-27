@@ -1,5 +1,5 @@
 name:                ekg-json
-version:             0.1.0.1
+version:             0.1.0.2
 synopsis:            JSON encoding of ekg metrics
 description:
   Encodes ekg metrics as JSON, using the same encoding as used by the
@@ -12,6 +12,7 @@ license-file:        LICENSE
 author:              Johan Tibell
 maintainer:          johan.tibell@gmail.com
 category:            Distribution
+extra-source-files:  CHANGES.md
 build-type:          Simple
 cabal-version:       >=1.10
 
