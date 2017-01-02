@@ -1,5 +1,5 @@
 name:                ekg-json
-version:             0.1.0.3
+version:             0.1.0.4
 synopsis:            JSON encoding of ekg metrics
 description:
   Encodes ekg metrics as JSON, using the same encoding as used by the
