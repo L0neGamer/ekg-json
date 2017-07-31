@@ -10,7 +10,8 @@ bug-reports:         https://github.com/tibbe/ekg-json/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Johan Tibell
-maintainer:          johan.tibell@gmail.com
+maintainer:          Johan Tibell <johan.tibell@gmail.com>,
+                     Mikhail Glushenkov <mikhail.glushenkov@gmail.com>
 category:            Distribution
 extra-source-files:  CHANGES.md
 build-type:          Simple
