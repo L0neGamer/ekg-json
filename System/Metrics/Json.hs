@@ -16,7 +16,9 @@ module System.Metrics.Json
 
 import Data.Aeson ((.=))
 import qualified Data.Aeson.Types as A
-import qualified Data.HashMap.Strict as M
+import qualified Data.Aeson.KeyMap as M
+import qualified Data.Aeson.Key as K
+import qualified Data.HashMap.Strict as HM
 import Data.Int (Int64)
 import qualified Data.Text as T
 import qualified System.Metrics as Metrics
@@ -47,19 +49,19 @@ sampleToJson :: Metrics.Sample -> A.Value
 sampleToJson metrics =
     buildOne metrics $ A.emptyObject
   where
-    buildOne :: M.HashMap T.Text Metrics.Value -> A.Value -> A.Value
-    buildOne m o = M.foldlWithKey' build o m
+    buildOne :: HM.HashMap T.Text Metrics.Value -> A.Value -> A.Value
+    buildOne m o = HM.foldlWithKey' build o m
 
     build :: A.Value -> T.Text -> Metrics.Value -> A.Value
-    build m name val = go m (T.splitOn "." name) val
+    build m name val = go m (map K.fromText $ T.splitOn "." name) val
 
-    go :: A.Value -> [T.Text] -> Metrics.Value -> A.Value
+    go :: A.Value -> [A.Key] -> Metrics.Value -> A.Value
     go (A.Object m) [str] val      = A.Object $ M.insert str metric m
       where metric = valueToJson val
     go (A.Object m) (str:rest) val = case M.lookup str m of
         Nothing -> A.Object $ M.insert str (go A.emptyObject rest val) m
         Just m' -> A.Object $ M.insert str (go m' rest val) m
-    go v _ _                        = typeMismatch "Object" v
+    go v _ _                       = typeMismatch "Object" v
 
 typeMismatch :: String   -- ^ The expected type
              -> A.Value  -- ^ The actual value encountered
