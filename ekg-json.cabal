@@ -1,5 +1,5 @@
 name:                ekg-json
-version:             0.1.0.7
+version:             0.2.0.0
 synopsis:            JSON encoding of ekg metrics
 description:
   Encodes ekg metrics as JSON, using the same encoding as used by the
@@ -24,7 +24,7 @@ library
   exposed-modules:
     System.Metrics.Json
   build-depends:
-    aeson >=0.4 && < 1.6,
+    aeson >= 2.0 && < 2.1,
     base >= 4.6 && < 4.16,
     ekg-core >= 0.1 && < 0.2,
     text < 1.3,

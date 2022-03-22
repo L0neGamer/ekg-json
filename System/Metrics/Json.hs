@@ -15,6 +15,8 @@ module System.Metrics.Json
     ) where
 
 import Data.Aeson ((.=))
+import qualified Data.Aeson.Key as A
+import qualified Data.Aeson.KeyMap as A
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as M
 import Data.Int (Int64)
@@ -45,7 +47,7 @@ import qualified System.Metrics.Distribution as Distribution
 --
 sampleToJson :: Metrics.Sample -> A.Value
 sampleToJson metrics =
-    buildOne metrics $ A.emptyObject
+    buildOne metrics A.emptyObject
   where
     buildOne :: M.HashMap T.Text Metrics.Value -> A.Value -> A.Value
     buildOne m o = M.foldlWithKey' build o m
@@ -54,11 +56,11 @@ sampleToJson metrics =
     build m name val = go m (T.splitOn "." name) val
 
     go :: A.Value -> [T.Text] -> Metrics.Value -> A.Value
-    go (A.Object m) [str] val      = A.Object $ M.insert str metric m
+    go (A.Object m) [str] val      = A.Object $ A.insert (A.fromText str) metric m
       where metric = valueToJson val
-    go (A.Object m) (str:rest) val = case M.lookup str m of
-        Nothing -> A.Object $ M.insert str (go A.emptyObject rest val) m
-        Just m' -> A.Object $ M.insert str (go m' rest val) m
+    go (A.Object m) (str:rest) val = case A.lookup (A.fromText str) m of
+        Nothing -> A.Object $ A.insert (A.fromText str) (go A.emptyObject rest val) m
+        Just m' -> A.Object $ A.insert (A.fromText str) (go m' rest val) m
     go v _ _                        = typeMismatch "Object" v
 
 typeMismatch :: String   -- ^ The expected type
