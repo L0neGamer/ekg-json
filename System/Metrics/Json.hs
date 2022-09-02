@@ -16,6 +16,8 @@ module System.Metrics.Json
 
 import Data.Aeson ((.=))
 import qualified Data.Aeson.Types as A
+import Data.Aeson.Key (fromText)
+import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.HashMap.Strict as M
 import Data.Int (Int64)
 import qualified Data.Text as T
@@ -54,11 +56,11 @@ sampleToJson metrics =
     build m name val = go m (T.splitOn "." name) val
 
     go :: A.Value -> [T.Text] -> Metrics.Value -> A.Value
-    go (A.Object m) [str] val      = A.Object $ M.insert str metric m
+    go (A.Object m) [str] val      = A.Object $ KeyMap.insert (fromText str) metric m
       where metric = valueToJson val
-    go (A.Object m) (str:rest) val = case M.lookup str m of
-        Nothing -> A.Object $ M.insert str (go A.emptyObject rest val) m
-        Just m' -> A.Object $ M.insert str (go m' rest val) m
+    go (A.Object m) (str:rest) val = case KeyMap.lookup (fromText str) m of
+        Nothing -> A.Object $ KeyMap.insert (fromText str) (go A.emptyObject rest val) m
+        Just m' -> A.Object $ KeyMap.insert (fromText str) (go m' rest val) m
     go v _ _                        = typeMismatch "Object" v
 
 typeMismatch :: String   -- ^ The expected type
