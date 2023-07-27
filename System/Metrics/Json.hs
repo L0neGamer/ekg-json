@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Encoding of ekg metrics as JSON. The encoding defined by the
@@ -15,6 +16,8 @@ module System.Metrics.Json
     ) where
 
 import Data.Aeson ((.=))
+import qualified Data.Aeson.Key as K
+import qualified Data.Aeson.KeyMap as KM
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as M
 import Data.Int (Int64)
@@ -54,11 +57,23 @@ sampleToJson metrics =
     build m name val = go m (T.splitOn "." name) val
 
     go :: A.Value -> [T.Text] -> Metrics.Value -> A.Value
-    go (A.Object m) [str] val      = A.Object $ M.insert str metric m
-      where metric = valueToJson val
-    go (A.Object m) (str:rest) val = case M.lookup str m of
-        Nothing -> A.Object $ M.insert str (go A.emptyObject rest val) m
-        Just m' -> A.Object $ M.insert str (go m' rest val) m
+    go (A.Object m) [str] val      = A.Object $ KM.insert str' metric m
+      where
+#if MIN_VERSION_aeson(2,0,0)
+        str' = K.fromText str
+#else
+        str' = str
+#endif
+        metric = valueToJson val
+    go (A.Object m) (str:rest) val = case KM.lookup str' m of
+        Nothing -> A.Object $ KM.insert str' (go A.emptyObject rest val) m
+        Just m' -> A.Object $ KM.insert str' (go m' rest val) m
+      where
+#if MIN_VERSION_aeson(2,0,0)
+        str' = K.fromText str
+#else
+        str' = str
+#endif
     go v _ _                        = typeMismatch "Object" v
 
 typeMismatch :: String   -- ^ The expected type
