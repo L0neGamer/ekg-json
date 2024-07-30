@@ -6,8 +6,8 @@ description:
   ekg package, thus allowing ekg metrics to be served by other HTTP
   servers than the one used by the ekg package.
 
-homepage:           https://github.com/tibbe/ekg-json
-bug-reports:        https://github.com/tibbe/ekg-json/issues
+homepage:           https://github.com/L0neGamer/ekg-json
+bug-reports:        https://github.com/L0neGamer/ekg-json/issues
 license:            BSD3
 license-file:       LICENSE
 author:             Johan Tibell
@@ -46,4 +46,4 @@ library
 
 source-repository head
   type:     git
-  location: https://github.com/tibbe/ekg-json.git
+  location: https://github.com/L0neGamer/ekg-json.git
