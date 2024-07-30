@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
 -- | Encoding of ekg metrics as JSON. The encoding defined by the
 -- functions in this module are standardized and used by the ekg web
@@ -21,6 +22,27 @@ import Data.Int (Int64)
 import qualified Data.Text as T
 import qualified System.Metrics as Metrics
 import qualified System.Metrics.Distribution as Distribution
+
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key as K
+import qualified Data.Aeson.KeyMap as KM
+
+type KeyMap = KM.KeyMap
+
+insertMap :: T.Text -> v -> KeyMap v -> KeyMap v
+insertMap = KM.insert . K.fromText
+
+lookupMap :: T.Text -> KeyMap v -> Maybe v
+lookupMap = KM.lookup . K.fromText
+#else
+type KeyMap = M.HashMap T.Text
+
+insertMap :: T.Text -> v -> KeyMap v -> KeyMap v
+insertMap = M.insert
+
+lookupMap :: T.Text -> KeyMap v -> Maybe v
+lookupMap = M.lookup
+#endif
 
 ------------------------------------------------------------------------
 -- * Converting metrics to JSON values
@@ -54,11 +76,11 @@ sampleToJson metrics =
     build m name val = go m (T.splitOn "." name) val
 
     go :: A.Value -> [T.Text] -> Metrics.Value -> A.Value
-    go (A.Object m) [str] val      = A.Object $ M.insert str metric m
+    go (A.Object m) [str] val      = A.Object $ insertMap str metric m
       where metric = valueToJson val
-    go (A.Object m) (str:rest) val = case M.lookup str m of
-        Nothing -> A.Object $ M.insert str (go A.emptyObject rest val) m
-        Just m' -> A.Object $ M.insert str (go m' rest val) m
+    go (A.Object m) (str:rest) val = case lookupMap str m of
+        Nothing -> A.Object $ insertMap str (go A.emptyObject rest val) m
+        Just m' -> A.Object $ insertMap str (go m' rest val) m
     go v _ _                        = typeMismatch "Object" v
 
 typeMismatch :: String   -- ^ The expected type
